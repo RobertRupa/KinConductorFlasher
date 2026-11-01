@@ -14,7 +14,8 @@ window.KinI18n = (() => {
       updateInfo:"For routine updates, use the supported OTA method or PlatformIO with matching firmware.bin and littlefs.bin files. Writing the application at 0x10000 does not guarantee an update to the active OTA slot.",
       download:"Firmware and release notes ↗",
       unavailable:"No verified firmware image is available for this profile.",remaining:"OTA space remaining",latest:"latest",
-      fetchError:"Firmware release unavailable: "
+      fetchError:"Firmware release unavailable: ",
+      customTitle:"Custom PlatformIO build",customHelp:"Choose a source version, build environment and optional compiler macros. Builds run in GitHub Actions; they are not compiled in the browser.",sourceRef:"Source tag or branch",buildProfile:"Build environment",defines:"Additional compiler defines (optional)",customWarning:"Only -DNAME or -DNAME=VALUE flags are accepted. Custom configurations are untested and may exceed available flash/RAM. Download and inspect build artifacts before flashing.",copyCommand:"Copy GitHub CLI command",openWorkflow:"Open build workflow ↗",copied:"Command copied. Paste it into a terminal authenticated with gh.",invalidBuild:"Invalid ref or compiler definitions."
     },
     pl: {
       project:"Projekt ↗",headline:"Prosto z przeglądarki.",intro:"Instalator fabryczny KinConductor dla kontrolerów KC868. Wymaga Chrome lub Edge na komputerze, połączenia USB i HTTPS.",
@@ -29,7 +30,8 @@ window.KinI18n = (() => {
       updateInfo:"Do rutynowych aktualizacji korzystaj z obsługiwanej ścieżki OTA lub PlatformIO oraz odpowiadających sobie plików firmware.bin i littlefs.bin. Samo zapisanie aplikacji pod 0x10000 nie gwarantuje aktualizacji aktywnego slotu OTA.",
       download:"Firmware i dokumentacja wydań ↗",
       unavailable:"Brak zweryfikowanego obrazu dla wybranego profilu.",remaining:"pozostało w OTA",latest:"najnowsza",
-      fetchError:"Publikacja firmware niedostępna: "
+      fetchError:"Publikacja firmware niedostępna: ",
+      customTitle:"Własna kompilacja PlatformIO",customHelp:"Wybierz wersję źródłową, środowisko i dodatkowe makra kompilatora. Build wykonuje GitHub Actions, nie przeglądarka.",sourceRef:"Tag lub gałąź źródłowa",buildProfile:"Środowisko kompilacji",defines:"Dodatkowe makra kompilatora (opcjonalne)",customWarning:"Dozwolone są tylko flagi -DNAME lub -DNAME=VALUE. Własne konfiguracje nie są przetestowane i mogą przekroczyć pamięć flash/RAM. Sprawdź artefakty przed flashowaniem.",copyCommand:"Kopiuj polecenie GitHub CLI",openWorkflow:"Otwórz workflow kompilacji ↗",copied:"Skopiowano polecenie. Wklej do terminala zalogowanego przez gh.",invalidBuild:"Nieprawidłowy tag/gałąź lub makra kompilatora."
     }
   };
   let lang = "en";
