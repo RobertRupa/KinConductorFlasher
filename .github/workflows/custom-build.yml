@@ -1,0 +1,97 @@
+name: Custom KinConductor firmware build
+run-name: Build ${{ inputs.profile }} @ ${{ inputs.source_ref }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Upstream KinConductor branch or release tag (e.g. v1.1.4)"
+        required: true
+        default: "v1.1.4"
+        type: string
+      profile:
+        description: "PlatformIO build environment"
+        required: true
+        default: "kc868-a6"
+        type: choice
+        options:
+          - kc868-a6
+          - kc868-a6-coprocessor
+          - kc868-a6-base
+          - kc868-a4
+          - kc868-a8
+          - kc868-a8s
+          - kc868-a16
+          - kc868-a32
+          - kc868-a64
+          - kc868-a128
+      custom_defines:
+        description: "Optional C/C++ macros separated by spaces (e.g. -DMY_FLAG=1). Only -D flags are allowed."
+        required: false
+        default: ""
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate user inputs
+        env:
+          REF: ${{ inputs.source_ref }}
+          PROFILE: ${{ inputs.profile }}
+          DEFINES: ${{ inputs.custom_defines }}
+        run: |
+          python3 - <<'PY'
+          import os,re
+          ref=os.environ["REF"]
+          defines=os.environ["DEFINES"]
+          if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,79}",ref) or ".." in ref or ref.endswith("/") or ref.startswith("-"):
+              raise SystemExit("Invalid source ref")
+          for token in defines.split():
+              if not re.fullmatch(r"-D[A-Za-z_][A-Za-z0-9_]*(?:=[A-Za-z0-9_.+-]{1,60})?",token):
+                  raise SystemExit("Invalid -D macro: "+token)
+          if len(defines)>512: raise SystemExit("Too many custom flags")
+          print("Input validation succeeded")
+          PY
+      - uses: actions/checkout@v4
+        with:
+          repository: RobertRupa/KinConductor
+          ref: ${{ inputs.source_ref }}
+          path: firmware
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PlatformIO
+        run: python -m pip install platformio==6.2.0
+      - name: Compile selected firmware profile
+        working-directory: firmware
+        env:
+          PROFILE: ${{ inputs.profile }}
+          DEFINES: ${{ inputs.custom_defines }}
+        run: |
+          # PLATFORMIO_BUILD_FLAGS extends build_flags without rewriting repository files.
+          if [ -n "$DEFINES" ]; then export PLATFORMIO_BUILD_FLAGS="$DEFINES"; fi
+          pio run -e "$PROFILE"
+          pio run -e "$PROFILE" -t buildfs
+      - name: Package matching application and LittleFS
+        working-directory: firmware
+        env:
+          PROFILE: ${{ inputs.profile }}
+          REF: ${{ inputs.source_ref }}
+        run: |
+          mkdir -p custom-artifacts
+          cp ".pio/build/$PROFILE/firmware.bin" custom-artifacts/firmware.bin
+          cp ".pio/build/$PROFILE/littlefs.bin" custom-artifacts/littlefs.bin
+          cp ".pio/build/$PROFILE/bootloader.bin" custom-artifacts/bootloader.bin
+          cp ".pio/build/$PROFILE/partitions.bin" custom-artifacts/partitions.bin
+          cp partitions.csv custom-artifacts/partitions.csv
+          git rev-parse HEAD > custom-artifacts/source-commit.txt
+          sha256sum custom-artifacts/*.bin > custom-artifacts/SHA256SUMS
+          printf 'Profile: %s\nSource ref: %s\nCustom build: NOT electrically validated. Inspect partitions.csv before flashing.\n' "$PROFILE" "$REF" > custom-artifacts/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kinconductor-custom-${{ inputs.profile }}-${{ github.run_number }}
+          path: firmware/custom-artifacts/
+          if-no-files-found: error
+          retention-days: 30
