@@ -19,9 +19,10 @@ def main():
         tag=release.get("tag_name","")
         if release.get("draft") or release.get("prerelease") or not re.fullmatch(r"v\d+\.\d+\.\d+",tag):continue
         assets={a["name"]:a for a in release.get("assets",[])}
-        if any(f"KinConductor-{tag}-{profile}.tar.gz" not in assets for profile in PROFILES):continue
+        available=[profile for profile in PROFILES if f"KinConductor-{tag}-{profile}.tar.gz" in assets]
+        if not available:continue
         record={"tag":tag,"profiles":{}}
-        for profile in PROFILES:
+        for profile in available:
             archive=fetch(assets[f"KinConductor-{tag}-{profile}.tar.gz"]["browser_download_url"])
             with tarfile.open(fileobj=io.BytesIO(archive),mode="r:gz") as bundle:
                 members={m.name:m for m in bundle if m.isfile()}
@@ -43,9 +44,8 @@ def main():
                 (out/"manifest.json").write_text(json.dumps({"name":f"KinConductor {tag} {profile} (factory)","version":tag,"chipFamily":"ESP32","parts":parts},indent=2)+"\n")
                 record["profiles"][profile]={"manifest":f"./firmware/{tag}/{profile}/manifest.json","firmwareBytes":meta["firmwareBytes"],"otaRemainingBytes":meta["otaRemainingBytes"],"commit":meta["commit"]}
         catalog["releases"].append(record)
-        break
     if not catalog["releases"]:raise RuntimeError("No complete stable KinConductor release")
     (SITE/"catalog.json").write_text(json.dumps(catalog,indent=2)+"\n")
     (SITE/".nojekyll").touch()
-    print("Verified and staged",catalog["releases"][0]["tag"],len(PROFILES),"profiles")
+    print("Verified and staged",catalog["releases"][0]["tag"],sum(len(r["profiles"]) for r in catalog["releases"]),"release/profile combinations")
 if __name__=="__main__":main()
