@@ -7,7 +7,7 @@ Browser-based factory firmware installer for [KinConductor](https://github.com/R
 ## Features
 - Firmware build-profile and published version selection.
 - Chrome/Edge Web Serial flashing over USB from HTTPS.
-- Downloads the latest **complete stable** upstream release during GitHub Actions deployment.
+- Downloads available stable upstream releases (including older versions) during GitHub Actions deployment, verifying each available build profile.
 - SHA-256, manifest, size and offset verification before offering firmware.
 - Installs matching `firmware.factory.bin` at `0x0` **and** `littlefs.bin` at `0x310000`.
 - Clear warning and confirmation before factory installation.
@@ -33,3 +33,13 @@ Then visit http://localhost:8000 using desktop Chrome/Edge with Web Serial. Inte
 The build downloads only complete published stable releases from `RobertRupa/KinConductor`; rejects incomplete/mismatched archives, invalid metadata, incorrect offsets/lengths and SHA-256 mismatches. A failed verification aborts publishing. Generated files in `site/` are build outputs.
 
 ESP Web Tools is loaded from the public unpkg CDN; binaries originate from upstream GitHub Releases.
+
+## Older firmware versions
+
+The Version selector includes stable KinConductor releases with packaged firmware archives. Different versions may offer different profiles: v1.1.4 provides ten profiles, whereas v1.1.2 and v1.1.3 provide the A6 and A6-coprocessor packages. The install action stays disabled if that version/profile combination does not exist. Each published image is verified against its release SHA-256 manifest before staging.
+
+## Custom PlatformIO builds
+
+The **Custom PlatformIO build** section lets you pick an upstream branch/tag (`source_ref`), PlatformIO environment (`profile`) and extra C/C++ macro definitions (`custom_defines`). The page produces a ready-to-run `gh workflow run custom-build.yml` command; no GitHub credentials are collected by the page. You can also configure the same inputs in [Actions → Custom KinConductor firmware build → Run workflow](https://github.com/RobertRupa/KinConductorFlasher/actions/workflows/custom-build.yml).
+
+After the run succeeds, download the GitHub Actions artifact containing `firmware.bin`, `littlefs.bin`, bootloader, partition table and SHA-256 checksums. **Custom artifacts are not automatically loaded into the browser flasher** and must not be treated as validated factory images. Review selected flags, partition layout and image sizes before attempting an upload. Custom compilation is independent of the GitHub Pages deployment.
