@@ -12,7 +12,7 @@ def fetch(url):
     return data
 def main():
     SITE.mkdir(exist_ok=True)
-    for f in ("index.html","app.js","style.css"): shutil.copyfile(ROOT/f,SITE/f)
+    for f in ("index.html","app.js","i18n.js","style.css"): shutil.copyfile(ROOT/f,SITE/f)
     releases=json.loads(fetch("https://api.github.com/repos/RobertRupa/KinConductor/releases"))
     catalog={"releases":[]}
     for release in releases:
