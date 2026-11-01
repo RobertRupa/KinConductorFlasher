@@ -70,8 +70,30 @@ jobs:
           PROFILE: ${{ inputs.profile }}
           DEFINES: ${{ inputs.custom_defines }}
         run: |
-          # PLATFORMIO_BUILD_FLAGS extends build_flags without rewriting repository files.
-          if [ -n "$DEFINES" ]; then export PLATFORMIO_BUILD_FLAGS="$DEFINES"; fi
+          # Append to the selected environment, retaining inherited project build flags.
+          python3 - <<'PY'
+          import os,pathlib,re
+          flags=os.environ["DEFINES"].split()
+          if flags:
+              path=pathlib.Path("platformio.ini")
+              content=path.read_text()
+              header="[env:"+os.environ["PROFILE"]+"]"
+              start=content.find(header)
+              if start<0: raise SystemExit("Unknown PlatformIO environment")
+              end=content.find("\\n[",start+len(header))
+              if end<0:end=len(content)
+              block=content[start:end]
+              match=re.search(r"(?m)^build_flags[ \\t]*=[^\\n]*",block)
+              if not match: raise SystemExit("Selected environment has no build_flags")
+              insert=match.end()
+              while insert<len(block) and block[insert:insert+1]=="\\n":
+                  next_line=block.find("\\n",insert+1)
+                  line=block[insert+1:next_line if next_line>=0 else len(block)]
+                  if not line.startswith((" ","\\t")) or not line.strip(): break
+                  insert=next_line if next_line>=0 else len(block)
+              block=block[:insert]+"\\n"+ "\\n".join("    "+flag for flag in flags)+block[insert:]
+              path.write_text(content[:start]+block+content[end:])
+          PY
           pio run -e "$PROFILE"
           pio run -e "$PROFILE" -t buildfs
       - name: Package matching application and LittleFS
